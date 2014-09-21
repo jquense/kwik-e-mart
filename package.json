@@ -23,7 +23,6 @@
   "homepage": "https://github.com/theporchrat/boutique",
   "dependencies": {
     "lodash": "~2.4.1",
-    "bluebird": "~2.3.2",
     "clank": "~0.12.0"
   },
   "devDependencies": {
