@@ -22,8 +22,9 @@
   },
   "homepage": "https://github.com/theporchrat/boutique",
   "dependencies": {
-    "lodash": "^2.4.1",
-    "clank": "^1.0.0"
+    "clank": "^2.0.1",
+    "cobble": "^2.0.1",
+    "xtend": "^4.0.0"
   },
   "devDependencies": {
     "sinon-chai": "^2.5.0",

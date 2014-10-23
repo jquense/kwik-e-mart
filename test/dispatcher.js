@@ -1,3 +1,5 @@
+'use strict';
+/*global describe, it */
 var chai  = require('chai')
   , sinon = require("sinon")
   , sinonChai = require("sinon-chai")
@@ -25,7 +27,7 @@ it( 'should register the store only once', function(){
   ;(function(){
     dispatcher.register(store)
   }).should.throw()
-  
+
 })
 
 
@@ -67,7 +69,7 @@ it( 'should not dispatch while dispatching', function(){
   ;(function(){
     dispatcher.dispatch({ action: 'ACTION', data: payload })
   }).should.throw('Dispatcher.dispatch(...): Cannot dispatch in the middle of a dispatch.')
-  
+
 })
 
 it( 'should wait for others', function(){
@@ -76,7 +78,7 @@ it( 'should wait for others', function(){
     , storeB;
 
   var StoreA = boutique.Store.extend({
-    actions: [ 
+    actions: [
       listenFor('ACTION', function(){
         spyB.should.not.have.been.calledOnce
         this.waitFor(storeB)
@@ -91,7 +93,7 @@ it( 'should wait for others', function(){
 
   new StoreA(dispatcher)
   storeB = new StoreB(dispatcher)
-  
+
   dispatcher.dispatch({ action: 'ACTION', data: {} })
 })
 
