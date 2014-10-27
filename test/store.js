@@ -14,14 +14,14 @@ it( 'should concat actions', function(){
     , Base = boutique.Store.extend({ actions: [ listenFor('ACTION', _.noop) ] })
     , MyStore = Base.extend({ actions: [ listenFor('ACTION_2', _.noop) ] });
 
-  
+
   (new MyStore(dispatcher)).actions.length.should.equal(2)
 })
 
 it( 'should emit change events', function(){
   var dispatcher = new boutique.Dispatcher()
     , spy = sinon.spy()
-    , store = boutique.Store.create({ 
+    , store = boutique.Store.create({
         dispatcher: dispatcher
       });
 
@@ -32,6 +32,17 @@ it( 'should emit change events', function(){
   spy.should.have.been.calledOnce
 })
 
+it( 'should handle stores with no actions', function(){
+  var dispatcher = new boutique.Dispatcher()
+    , store = boutique.Store.create({
+        dispatcher: dispatcher
+      });
+
+  ;(function(){
+    dispatcher.dispatch({ action: 'ACTION', data: {} })
+  })
+  .should.not.throw()
+})
 
 it( 'should batch set calls', function(done){
   var dispatcher = new boutique.Dispatcher()
@@ -52,7 +63,7 @@ it( 'should batch set calls', function(done){
   store._set({ a: 'hi' })
 
   store.state.should.eql({ hi: 'hello', a: 'hi' })
-  
+
   store._set({ hi: 'oops' })
 
   spy.should.not.have.been.called
@@ -61,9 +72,9 @@ it( 'should batch set calls', function(done){
 it( 'should respond to multiple actions from a single handler', function(){
   var dispatcher = new boutique.Dispatcher()
     , spy = sinon.spy()
-    , store = boutique.Store.create({ 
+    , store = boutique.Store.create({
         dispatcher: dispatcher,
-        actions: [ listenFor('ACTION', 'ACTION_B', spy) ] 
+        actions: [ listenFor('ACTION', 'ACTION_B', spy) ]
       });
 
   dispatcher.dispatch({ action: 'ACTION', data: {} })
