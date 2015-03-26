@@ -1,116 +1,36 @@
-var chai  = require('chai')
-  , sinon = require("sinon")
-  , sinonChai = require("sinon-chai")
-  , _      = require('lodash')
-  , boutique = require('../index')
-  , ActionCreator = boutique.ActionCreator
-  , action = boutique.ActionCreator.action;
+var Boutique = require('../src/index')
 
-chai.use(sinonChai);
-chai.should();
+describe('actions', ()=> {
+  var btq;
 
+  beforeEach(()=> {
+    btq = new Boutique()
+  })
 
-it( 'should create methods that dispatch correctly', function(){
-  var dispatcher = new boutique.Dispatcher()
-    , payload = {} 
-  
-  sinon.spy(dispatcher, 'dispatch')
-
-  var storeActions = ActionCreator.create({
-
-        dispatcher: dispatcher,
-
-        createUser: action('CREATE_USER', function(name, send){
-          payload.name = name
-          send(payload)
-        }),
-
-        saveUser: action('SAVE_USER', 'PERSIST_USER', function(name, send){
-          payload.name = name
-          send(payload)
+  it('should bind action context', ()=> {
+    var spy = sinon.spy(btq, 'dispatch')
+      , actions = btq.createActions({ 
+          action(data){ 
+            this.dispatch.should.be.a('function')
+            this.actions.should.equal(actions)
+            this.dispatch(data) 
+          }
         })
-      });
 
-  storeActions.createUser('jason')
+    actions.action('hi')
 
-  dispatcher.dispatch.should.have.been
-    .calledOnce.and.calledWithExactly({ action: 'CREATE_USER', data: payload })
+    spy.should.have.been.calledWithExactly('action', 'hi')
+  })
 
-  dispatcher.dispatch.reset()
+  it('should generate actions', ()=> {
+    var actions = btq.generateActions(['actionA', 'actionB'])
 
-  storeActions.saveUser('jason')
+    actions.should.have.keys(['actionA', 'actionB'])
 
-  dispatcher.dispatch.should.have.been.calledTwice
+    ;(() => actions.actionA())
+      .should.throw("the result of `generateActions()` must be passed to `createActions()` and not called directly");
 
-})
-
-it( 'should create methods that dispatch by default', function(){
-  var dispatcher = new boutique.Dispatcher(); 
-
-  var storeActions = ActionCreator.create({
-
-        dispatcher: dispatcher,
-
-        createUser: action('CREATE_USER')
-
-      });
-
-  sinon.spy(dispatcher, 'dispatch')
-
-  storeActions.createUser('jason')
-
-  dispatcher.dispatch.should.have.been
-    .calledOnce.and.calledWithExactly({ action: 'CREATE_USER', data: 'jason' })
-})
-
-
-it( 'should dispatch using key name if no action provided', function(){
-  var dispatcher = new boutique.Dispatcher(); 
-
-  var storeActions = ActionCreator.create({
-
-        dispatcher: dispatcher,
-
-        createUser: action(function(name, send){
-          send(name)
-        }),
-
-        saveUser: action(),
-      });
-
-  sinon.spy(dispatcher, 'dispatch')
-
-  storeActions.createUser('jason')
-  storeActions.saveUser('jason')
-
-  dispatcher.dispatch
-    .should.have.been.calledTwice
-    .and.have.deep.property('args[0][0]').that.eqls({ action: 'createUser', data: 'jason' })
-
-  dispatcher.dispatch
-    .should.have.deep.property('args[1][0]').that.eqls({ action: 'saveUser', data: 'jason' })
-})
-
-
-it( 'should be able to call other actions from an action', function(){
-  var dispatcher = new boutique.Dispatcher(); 
-
-  var storeActions = ActionCreator.create({
-
-        dispatcher: dispatcher,
-
-        createUser: action('CREATE_USER', function(name, send){
-          send(name)
-          this.saveUser(name)
-        }),
-
-        saveUser: action('SAVE_USER')
-
-      });
-
-  sinon.spy(dispatcher, 'dispatch')
-
-  storeActions.createUser('jason')
-
-  dispatcher.dispatch.should.have.been.calledTwice
+    ;(() => btq.generateActions('actionA', 'actionB'))
+      .should.throw("Expected an Array to be passed to `generateActions()`, but got: string");
+  })
 })
