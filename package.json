@@ -70,6 +70,10 @@
     "webpack-dev-server": "^1.7.0"
   },
   "dependencies": {
-    "flux": "^2.0.1"
+    "asap": "^2.0.1",
+    "es-symbol": "^1.1.1",
+    "flux": "^2.0.1",
+    "invariant": "^2.0.0",
+    "tiny-emitter": "^1.0.0"
   }
 }

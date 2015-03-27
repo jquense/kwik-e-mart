@@ -19,7 +19,7 @@ describe('actions', ()=> {
 
     actions.action('hi')
 
-    spy.should.have.been.calledWithExactly('action', 'hi')
+    spy.should.have.been.calledWithExactly(actions.action.ACTION_ID, 'hi')
   })
 
   it('should generate actions', ()=> {
