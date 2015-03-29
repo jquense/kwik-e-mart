@@ -1,62 +1,36 @@
 var EventEmitter = require('tiny-emitter')
-  , asap = require('asap')
-  //, rawAsap = require('asap/raw') for production?
   , invariant = require('invariant');
-
-
-module.exports.stateMixin = function(sync = false){
-  let state = {}
-    , scheduled = false;
-
-  function schedule(fn) {
-    
-    if (sync) fn()
-
-    else if ( !scheduled ) {
-      asap(() => (scheduled = false), fn())
-      scheduled = true
-    }
-  }
-
-  return {
-
-    setState(updates) {
-      state = { ...state, ...updates }
-      schedule(() => this.emitChange())
-    },
-
-    getState(){
-      return state
-    }
-  }
-}
-
 
 module.exports.actionsMixin = function(actions){
 
   return {
 
-    bindAction(action, handler){
+    bindAction(action, name = action.KEY){
       let key = action.ACTION_ID || action
+      let handler = this[name]
 
       invariant(typeof handler === 'function'
         , 'Action `handler` must be a function, instead got: %s', typeof handler)
+
+      if (process.env.NODE_ENV !== 'production')
+        createHandlerWarning(this, name, handler)
 
       actions[key] = handler
     },
 
     bindActions(actionCreators) {
-      for( var key in actionCreators ) if ( actionCreators.hasOwnProperty(key))
-        this.bindAction(actionCreators[key], this[key])
+      for( let key in actionCreators ) if ( actionCreators.hasOwnProperty(key))
+        this.bindAction(actionCreators[key], key)
     }
   }
 }
 
 
 module.exports.emitterMixin = function(){
-  let emitter = new EventEmitter();
-
+  let emitter = new EventEmitter()
+    
   return {
+
     emitChange() {
       emitter.emit('change')
     },
@@ -69,4 +43,15 @@ module.exports.emitterMixin = function(){
       emitter.off('change', fn)
     }
   }
+}
+
+function createHandlerWarning(instance, key, handler){
+  Object.defineProperty(instance, key, {
+    get() {
+      console.warn(
+        `Accessing an Action handler: \`${key}()\` directly is bad practice. ` + 
+        `Only the dispatcher should call this method`)
+      return handler
+    }
+  })
 }

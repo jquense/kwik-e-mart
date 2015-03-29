@@ -1,6 +1,7 @@
+
 var Boutique = require('../src/index')
 
-describe.only('Stores', ()=> {
+describe('Stores', ()=> {
   var btq;
 
   beforeEach(()=> {
@@ -14,7 +15,6 @@ describe.only('Stores', ()=> {
       'bindAction',
       'bindActions',
       'setState', 
-      'getState',
       'emitChange', 
       'listen', 
       'stopListening', 
@@ -29,7 +29,7 @@ describe.only('Stores', ()=> {
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, this.login)
+        this.bindAction(actions.login, 'login')
       }
 
       login(arg){
@@ -38,7 +38,7 @@ describe.only('Stores', ()=> {
       }
     }
 
-    let store = btq.createStore(Store);
+    btq.createStore(Store);
 
     actions.logout()
     actions.login('hi')
@@ -60,12 +60,12 @@ describe.only('Stores', ()=> {
         count++;
       }
 
-      logout(arg){
+      logout(){
         count && done()
       }
     }
 
-    let store = btq.createStore(Store);
+    store = btq.createStore(Store);
 
     actions.login('hi')
     actions.logout()
@@ -76,7 +76,7 @@ describe.only('Stores', ()=> {
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, this.login)
+        this.bindAction(actions.login, 'login')
       }
 
       login() {
@@ -97,17 +97,84 @@ describe.only('Stores', ()=> {
     spy.should.have.been.calledOnce;
   })
 
-  it('should be batchable', done => {
+  it('should update state', () => {
     let actions = btq.createActions(btq.generateActions(['login']));
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, this.login)
+        this.bindAction(actions.login, 'login')
+
+        this.state = { first: 5}
       }
 
       login() {
         this.setState({ prop: 1 })
         this.setState({ otherProp: 3 })
+      }
+    }
+
+    let store = btq.createStore(Store);
+
+    actions.login()
+
+    store.state.should.eql({ first: 5, prop: 1, otherProp: 3})
+  })
+
+  it('should be batchable', () => {
+    let actions = btq.createActions(btq.generateActions(['login']));
+
+    let spy = sinon.spy()
+      , store = btq.createStore({
+        constructor(){
+          this.bindAction(actions.login, 'login')
+        },
+
+        login() {
+          this.setState({ prop: 1 })
+          this.setState({ otherProp: 3 })
+        }
+      });
+
+    store.listen(spy)
+
+    actions.login()
+
+    spy.should.have.been.calledOnce;
+  })
+
+  it('should not emit change when no setState calls were made', () => {
+    let actions = btq.createActions(btq.generateActions(['login']));
+
+    let spy = sinon.spy()
+      , store = btq.createStore({
+          constructor(){
+            this.bindAction(actions.login, 'login')
+          },
+
+          login() {}
+        });
+
+    store.listen(spy)
+
+    actions.login()
+
+    spy.should.not.have.been.called;
+  })
+
+  it('should be update state synchronously', () => {
+    let actions = btq.createActions(btq.generateActions(['login']));
+
+    class Store {
+      constructor(){
+        this.bindAction(actions.login, 'login')
+      }
+
+      login() {
+        this.setState({ prop: 1 })
+        this.state.should.eql({ prop: 1 })
+
+        this.setState({ otherProp: 3 })
+        this.state.should.eql({ prop: 1, otherProp: 3})
       }
     }
 
@@ -117,34 +184,47 @@ describe.only('Stores', ()=> {
     store.listen(spy)
 
     actions.login()
-
-    setTimeout(()=> {
-      spy.should.have.been.calledOnce;
-      done()
-    })
+    
+    spy.should.have.been.calledOnce;
   })
 
-  it('should be allow sync updates', () => {
+  it('should not break store prototype chain', () => {
+    let actions = btq.createActions(btq.generateActions(['login']));
+
+    class BaseStore {
+      logout(){}
+    }
+
+    class Store extends BaseStore {
+      constructor(){
+        this.bindAction(actions.login)
+      }
+
+      login() {}
+    }
+
+    btq.createStore(Store)
+      .logout.should.be.a('function');
+  })
+
+  it('should warn on direct action handler access', () => {
     let actions = btq.createActions(btq.generateActions(['login']));
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, this.login)
+        this.bindAction(actions.login, 'login')
       }
 
-      login() {
-        this.setState({ prop: 1 })
-        this.setState({ otherProp: 3 })
-      }
+      login() {}
     }
 
-    let store = btq.createStore(Store, { sync: true })
-      , spy = sinon.spy();
+    let store = btq.createStore(Store)
+      , spy = sinon.stub(console, 'warn');
 
-    store.listen(spy)
+    store.login()
 
-    actions.login()
-    
-    spy.should.have.been.calledTwice;
+    spy.should.have.been.calledOnce;
+
+    console.warn.restore()
   })
 })

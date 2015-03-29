@@ -1,8 +1,7 @@
 let Dispatcher = require('flux').Dispatcher
   , { 
     actionsMixin
-  , emitterMixin
-  , stateMixin } = require('./storeMixins')
+  , emitterMixin } = require('./storeMixins')
   , invariant = require('invariant');
 
 
@@ -24,7 +23,10 @@ module.exports = class Boutique {
     const ACTIONS = {};
 
     let boutique = this
-      , proto = StoreClass.prototype;
+      , proto = StoreClass.prototype
+      , handlingDispatch = false
+      , needsFlush = false
+      , assignState = options.assignState || StoreClass.assignState || (n, o) => ({ ...n, ...o});
 
     if (typeof StoreClass !== 'function') {
       let tmp = StoreClass
@@ -32,7 +34,7 @@ module.exports = class Boutique {
       proto = tmp
     }
 
-    StoreClass.prototype = {
+    StoreClass.prototype = assign(proto, {
 
       waitFor(stores) {
         invariant(Array.isArray(stores)
@@ -42,23 +44,35 @@ module.exports = class Boutique {
           stores.map( store => store.dispatchToken || store ))
       },
 
-      ...stateMixin(options.sync),
+      setState(updates){
+        this.state = assignState(this.state, updates)
+
+        if (handlingDispatch) 
+          needsFlush = true
+        else 
+          this.emitChange()
+      },
 
       ...actionsMixin(ACTIONS),
 
-      ...emitterMixin(),
-
-      ...proto
-    }
+      ...emitterMixin()
+    })
 
     let store = new StoreClass()
 
     store.dispatchToken = boutique.dispatcher.register( payload => {
-        let handler = ACTIONS[payload.action];
+      let handler = ACTIONS[payload.action];
 
-        if ( handler )
-          handler.apply(store, payload.data)
-      })
+      if ( handler ) {
+        handlingDispatch = true
+
+        handler.apply(store, payload.data)
+
+        needsFlush && store.emitChange()
+
+        needsFlush = handlingDispatch = false
+      }
+    })
 
     return store
   }
@@ -84,17 +98,13 @@ module.exports = class Boutique {
         , dispatch  = (...data) => this.dispatch(ACTION_ID, ...data)
         , handler   = val.bind({ actions, dispatch });
 
+      handler.KEY = key
       handler.ACTION_ID = ACTION_ID;
       actions[key] = handler;      
     })
   }
 
 }
-
-// createActions({ 
-//   ...boutique.generateActions('create')
-
-//   )
 
 
 function transform(obj, cb, seed){
@@ -107,6 +117,17 @@ function transform(obj, cb, seed){
       cb(obj[key], key, obj)
 
   return seed
+}
+
+function assign(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) if (source.hasOwnProperty(key)) 
+      target[key] = source[key];
+  }
+
+  return target;
 }
 
 function uniqueId(prefix) {

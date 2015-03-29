@@ -59,7 +59,7 @@
     "chai": "^1.10.0",
     "sinon-chai": "^2.6.0",
     "chai-as-promised": "^4.1.1",
-    "phantomjs": "~1.9.10",
+    "phantomjs": "^1.9.16",
     "imports-loader": "^0.6.3",
     "css-loader": "^0.9.1",
     "style-loader": "^0.8.3",
@@ -71,7 +71,6 @@
   },
   "dependencies": {
     "asap": "^2.0.1",
-    "es-symbol": "^1.1.1",
     "flux": "^2.0.1",
     "invariant": "^2.0.0",
     "tiny-emitter": "^1.0.0"
