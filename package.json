@@ -58,17 +58,10 @@
     "sinon-chai": "^2.6.0",
     "chai-as-promised": "^4.1.1",
     "phantomjs": "^1.9.16",
-    "imports-loader": "^0.6.3",
-    "css-loader": "^0.9.1",
-    "style-loader": "^0.8.3",
-    "less-loader": "^2.0.0",
-    "react": "^0.12.2",
-    "react-hot-loader": "^1.1.7",
     "webpack": "^1.4.15",
     "webpack-dev-server": "^1.7.0"
   },
   "dependencies": {
-    "asap": "^2.0.1",
     "flux": "^2.0.1",
     "invariant": "^2.0.0",
     "tiny-emitter": "^1.0.0"
