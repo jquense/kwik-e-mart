@@ -11,6 +11,8 @@ module.exports = class Boutique {
 
   constructor(){
     this.dispatcher = new Dispatcher()
+    this.actions = {}
+    this.stores = {}
   }
 
   dispatch(action, ...data){
@@ -89,12 +91,15 @@ module.exports = class Boutique {
     }, {})
   }
 
-  createActions(prefix, actionHash){
-    if (arguments.length === 1)
-      actionHash = prefix, prefix = uniqueId('action_')
+  createActions(actionHash){
+    let name = actionHash.displayName || uniqueId('action_')
 
-    return transform(actionHash, (actions, val, key) => {
-      let ACTION_ID = `${prefix}_${key}`
+
+    return this.actions[name] = transform(actionHash, (actions, val, key) => {
+      if( key === 'displayName') 
+        return
+
+      let ACTION_ID = `${name}_${key}`
         , dispatch  = (...data) => this.dispatch(ACTION_ID, ...data)
         , handler   = val.bind({ actions, dispatch });
 
