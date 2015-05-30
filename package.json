@@ -45,6 +45,7 @@
   "dependencies": {
     "flux": "^2.0.1",
     "scoped-invariant": "*",
+    "scoped-warning": "^1.0.0",
     "tiny-emitter": "^1.0.0"
   }
 }

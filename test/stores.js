@@ -29,10 +29,10 @@ describe('Stores', ()=> {
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, 'login')
+        this.bindAction(actions.login, 'onLogin')
       }
 
-      login(arg){
+      onLogin(arg){
         arg.should.equal('hi')
         done()
       }
@@ -55,12 +55,12 @@ describe('Stores', ()=> {
         this.bindActions(actions)
       }
 
-      login(arg){
+      onLogin(arg){
         arg.should.equal('hi')
         count++;
       }
 
-      logout(){
+      onLogout(){
         count && done()
       }
     }
@@ -69,6 +69,38 @@ describe('Stores', ()=> {
 
     actions.login('hi')
     actions.logout()
+  })
+
+  it('should bind listener hash', done => {
+    let actions = btq.createActions(
+          btq.generateActions(['login', 'logout']));
+
+    let count = 0;
+
+    class Store {
+      constructor(){
+        this.bindListeners({
+          onSuccess: [ 
+            actions.login.success, 
+            actions.logout.success
+          ],
+          onLogin: actions.login
+        })
+      }
+
+      onSuccess(){ count++; }
+
+      onLogin(){
+        (count == 2) && done() 
+      }
+    }
+
+    btq.createStore(Store);
+
+    actions.login.success()
+    actions.logout.success()
+
+    actions.login()
   })
 
   it('should listen for async completion actions when they exist', done => {
@@ -82,10 +114,10 @@ describe('Stores', ()=> {
         this.bindActions(actions)
       }
 
-      login(arg){ count++ }
-      loginSuccess(arg){ count++ }
+      onLogin(arg){ count++ }
+      onLoginSuccess(arg){ count++ }
 
-      logout(){
+      onLogout(){
         (count == 2) && done()
       }
     }
@@ -103,10 +135,10 @@ describe('Stores', ()=> {
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, 'login')
+        this.bindAction(actions.login, 'onLogin')
       }
 
-      login() {
+      onLogin() {
         this.emitChange()
       }
     }
@@ -129,12 +161,12 @@ describe('Stores', ()=> {
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, 'login')
+        this.bindAction(actions.login, 'onLogin')
 
         this.state = { first: 5}
       }
 
-      login() {
+      onLogin() {
         this.setState({ prop: 1 })
         this.setState({ otherProp: 3 })
       }
@@ -152,11 +184,31 @@ describe('Stores', ()=> {
 
     let spy = sinon.spy()
       , store = btq.createStore({
-        constructor(){
-          this.bindAction(actions.login, 'login')
-        },
 
         login() {
+          this.batchChanges(()=> {
+            this.setState({ prop: 1 })
+            this.setState({ otherProp: 3 })
+          })
+        }
+      });
+
+    store.listen(spy)
+    store.login()
+
+    spy.should.have.been.calledOnce;
+  })
+
+  it('should batch dispatches', () => {
+    let actions = btq.createActions(btq.generateActions(['login']));
+
+    let spy = sinon.spy()
+      , store = btq.createStore({
+        constructor(){
+          this.bindAction(actions.login, 'onLogin')
+        },
+
+        onLogin() {
           this.setState({ prop: 1 })
           this.setState({ otherProp: 3 })
         }
@@ -175,10 +227,10 @@ describe('Stores', ()=> {
     let spy = sinon.spy()
       , store = btq.createStore({
           constructor(){
-            this.bindAction(actions.login, 'login')
+            this.bindAction(actions.login, 'onLogin')
           },
 
-          login() {}
+          onLogin() {}
         });
 
     store.listen(spy)
@@ -193,10 +245,10 @@ describe('Stores', ()=> {
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, 'login')
+        this.bindAction(actions.login, 'onLogin')
       }
 
-      login() {
+      onLogin() {
         this.setState({ prop: 1 })
         this.state.should.eql({ prop: 1 })
 
@@ -219,7 +271,7 @@ describe('Stores', ()=> {
     let actions = btq.createActions(btq.generateActions(['login']));
 
     class BaseStore {
-      logout(){}
+      onLogout(){}
     }
 
     class Store extends BaseStore {
@@ -228,11 +280,11 @@ describe('Stores', ()=> {
         this.bindAction(actions.login)
       }
 
-      login() {}
+      onLogin() {}
     }
 
     btq.createStore(Store)
-      .logout.should.be.a('function');
+      .onLogout.should.be.a('function');
   })
 
   it('should warn on direct action handler access', () => {
@@ -240,19 +292,39 @@ describe('Stores', ()=> {
 
     class Store {
       constructor(){
-        this.bindAction(actions.login, 'login')
+        this.bindAction(actions.login, 'onLogin')
       }
 
-      login() {}
+      onLogin() {}
     }
 
     let store = btq.createStore(Store)
       , spy = sinon.stub(console, 'warn');
 
-    store.login()
+    store.onLogin()
 
     spy.should.have.been.calledOnce;
 
+    console.warn.restore()
+  })
+
+  it.only('should warn on bad handler method name', done => {
+    let actions = btq.createActions(btq.generateActions(['login']))
+      , spy = sinon.stub(console, 'warn');
+
+    class Store {
+      constructor(){
+        this.bindAction(actions.login)
+      }
+
+      login() {
+        done()
+      }
+    }
+
+    btq.createStore(Store)
+    actions.login()
+    spy.should.have.been.calledOnce
     console.warn.restore()
   })
 })

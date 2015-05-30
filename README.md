@@ -202,4 +202,29 @@ userStore.getUser(1) // returns a single user
 
 ```
 
+For cases where you want to bind multiple different actions to a single store handler there is an inverted api for doing that: `bindListeners()`
+
+```js
+  class UserStore {
+    constructor(){
+      this.bindListeners({
+        onSuccess: [ 
+          userActions.createUser.success, 
+          userActions.updateUser.success
+        ],
+        onFailure: [ 
+          userActions.createUser.failure, 
+          userActions.updateUser.failure
+        ]   
+      })
+    }
+    onSuccess(newUser){
+      // success code...
+    }
+    onFailure(newUser){
+      // failure code...
+    }
+  }
+```
+
 All stores are given as `dispatchToken` which they can pass to `store.waitFor()` in order to handle inter store dependencies.

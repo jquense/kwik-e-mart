@@ -2,7 +2,7 @@ let Dispatcher = require('flux').Dispatcher
   , { 
     actionsMixin
   , emitterMixin } = require('./storeMixins')
-  , invariant = require('scoped-invariant')('boutique');
+  , invariant = require('scoped-invariant')('kwik-E-mart');
 
 
 let idCount = 0;
@@ -26,7 +26,7 @@ module.exports = class Boutique {
 
     let boutique = this
       , proto = StoreClass.prototype
-      , handlingDispatch = false
+      , batching = false
       , needsFlush = false
       , assignState = options.assignState || StoreClass.assignState || ((n, o)=>({ ...n, ...o}));
 
@@ -48,11 +48,16 @@ module.exports = class Boutique {
 
       setState(updates){
         this.state = assignState(this.state, updates)
+        if (batching) needsFlush = true
+        else          this.emitChange()
+      },
 
-        if (handlingDispatch) 
-          needsFlush = true
-        else 
-          this.emitChange()
+      batchChanges(fn){
+        if ( batching ) return fn.call(this)
+        batching = true
+        fn.call(this)
+        needsFlush && this.emitChange()
+        needsFlush = batching = false
       },
 
       ...actionsMixin(ACTIONS),
@@ -65,15 +70,8 @@ module.exports = class Boutique {
     store.dispatchToken = boutique.dispatcher.register( payload => {
       let handler = ACTIONS[payload.action];
 
-      if ( handler ) {
-        handlingDispatch = true
-
-        handler.apply(store, payload.data)
-
-        needsFlush && store.emitChange()
-
-        needsFlush = handlingDispatch = false
-      }
+      if ( handler )
+        store.batchChanges(()=> handler.apply(store, payload.data))
     })
 
     return store
