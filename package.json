@@ -1,16 +1,17 @@
 {
-  "name": "boutique",
+  "name": "kwik-e-mart",
   "version": "0.4.0",
   "description": "",
   "author": {
     "name": "Jason Quense",
     "email": "monastic.panic@gmail.com"
   },
-  "repository": "jquense/boutique",
+  "repository": "jquense/kwik-e-mart",
   "license": "MIT",
   "main": "lib/index.js",
   "keywords": [
-    "boutique",
+    "kwik-e-mart",
+    "flux",
     "react-component"
   ],
   "scripts": {
