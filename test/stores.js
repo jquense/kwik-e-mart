@@ -65,9 +65,36 @@ describe('Stores', ()=> {
       }
     }
 
-    store = btq.createStore(Store);
+    btq.createStore(Store);
 
     actions.login('hi')
+    actions.logout()
+  })
+
+  it('should listen for async completion actions when they exist', done => {
+    let actions = btq.createActions(
+          btq.generateActions(['login', 'logout']));
+
+    let count = 0;
+
+    class Store {
+      constructor(){
+        this.bindActions(actions)
+      }
+
+      login(arg){ count++ }
+      loginSuccess(arg){ count++ }
+
+      logout(){
+        (count == 2) && done()
+      }
+    }
+
+    btq.createStore(Store);
+
+    actions.login()
+    actions.login.success()
+
     actions.logout()
   })
 
@@ -197,6 +224,7 @@ describe('Stores', ()=> {
 
     class Store extends BaseStore {
       constructor(){
+        super()
         this.bindAction(actions.login)
       }
 

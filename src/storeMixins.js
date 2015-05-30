@@ -1,5 +1,5 @@
 var EventEmitter = require('tiny-emitter')
-  , invariant = require('invariant');
+  , invariant = require('scoped-invariant')('boutique');
 
 module.exports.actionsMixin = function(actions){
 
@@ -19,8 +19,15 @@ module.exports.actionsMixin = function(actions){
     },
 
     bindActions(actionCreators) {
-      for( let key in actionCreators ) if ( actionCreators.hasOwnProperty(key))
-        this.bindAction(actionCreators[key], key)
+      for( let key in actionCreators ) if ( actionCreators.hasOwnProperty(key)) {
+        var action = actionCreators[key]
+        
+        this.bindAction(action, key)
+
+        // don't 'require' async methods to exist
+        if (this[action.success.KEY]) this.bindAction(action.success)
+        if (this[action.failure.KEY]) this.bindAction(action.failure)
+      }
     }
   }
 }

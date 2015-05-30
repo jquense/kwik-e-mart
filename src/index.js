@@ -2,7 +2,7 @@ let Dispatcher = require('flux').Dispatcher
   , { 
     actionsMixin
   , emitterMixin } = require('./storeMixins')
-  , invariant = require('invariant');
+  , invariant = require('scoped-invariant')('boutique');
 
 
 let idCount = 0;
@@ -28,7 +28,7 @@ module.exports = class Boutique {
       , proto = StoreClass.prototype
       , handlingDispatch = false
       , needsFlush = false
-      , assignState = options.assignState || StoreClass.assignState || (n, o) => ({ ...n, ...o});
+      , assignState = options.assignState || StoreClass.assignState || ((n, o)=>({ ...n, ...o}));
 
     if (typeof StoreClass !== 'function') {
       let tmp = StoreClass
@@ -36,7 +36,7 @@ module.exports = class Boutique {
       proto = tmp
     }
 
-    StoreClass.prototype = assign(proto, {
+    StoreClass.prototype = Object.assign(proto, {
 
       waitFor(stores) {
         invariant(Array.isArray(stores)
@@ -94,23 +94,31 @@ module.exports = class Boutique {
   createActions(actionHash){
     let name = actionHash.displayName || uniqueId('action_')
 
-
     return this.actions[name] = transform(actionHash, (actions, val, key) => {
       if( key === 'displayName') 
         return
 
       let ACTION_ID = `${name}_${key}`
         , dispatch  = (...data) => this.dispatch(ACTION_ID, ...data)
-        , handler   = val.bind({ actions, dispatch });
+        , success   = createAsyncAction('success', ACTION_ID, key, this)
+        , failure   = createAsyncAction('failure', ACTION_ID, key, this)
+        , handler   = val.bind({ actions, dispatch, success, failure });
 
       handler.KEY = key
       handler.ACTION_ID = ACTION_ID;
+      handler.success = success
+      handler.failure = failure
       actions[key] = handler;      
     })
   }
-
 }
 
+function createAsyncAction(suffix, parentID, parentKey, boutique){
+  var handler = (...data) => boutique.dispatch(parentID + '__' + suffix, ...data)
+  handler.ACTION_ID = parentID + '__' + suffix
+  handler.KEY = parentKey + suffix[0].toUpperCase() + suffix.substr(1).toLowerCase()
+  return handler
+}
 
 function transform(obj, cb, seed){
   cb = cb.bind(null, seed = seed || (Array.isArray(obj) ? [] : {}))
@@ -122,17 +130,6 @@ function transform(obj, cb, seed){
       cb(obj[key], key, obj)
 
   return seed
-}
-
-function assign(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];
-
-    for (var key in source) if (source.hasOwnProperty(key)) 
-      target[key] = source[key];
-  }
-
-  return target;
 }
 
 function uniqueId(prefix) {

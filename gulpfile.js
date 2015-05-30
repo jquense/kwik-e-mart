@@ -2,7 +2,6 @@
 var gulp    = require('gulp')
   , rimraf  = require('rimraf')
   , plumber = require('gulp-plumber')
-  , babel   = require('./package.json').babel
   , configs = require('./webpack.configs')
   , babelTransform = require('gulp-babel-helpers')
   , webpack = require('webpack')
@@ -19,10 +18,7 @@ gulp.task('transpile', ['clean'], function(){
 
   return gulp.src(['./src/**/*.jsx', './src/**/*.js'])
       .pipe(plumber())
-      .pipe(babelTransform(
-          babel
-        , './util/babelHelpers.js'
-        , './lib/util/babelHelpers.js'))
+      .pipe(babelTransform('./util/babelHelpers.js'))
       .pipe(gulp.dest('./lib'));
 })
 
@@ -43,3 +39,5 @@ gulp.task('dev', function() {
 })
 
 gulp.task('release', ['clean', 'transpile'])
+
+gulp.task('publish', ['release'], require('jq-release'))

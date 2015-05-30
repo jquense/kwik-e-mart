@@ -33,4 +33,42 @@ describe('actions', ()=> {
     ;(() => btq.generateActions('actionA', 'actionB'))
       .should.throw("Expected an Array to be passed to `generateActions()`, but got: string");
   })
+
+  it('should auto create async actions', ()=> {
+    var spy = sinon.spy(btq, 'dispatch')
+      , actions = btq.createActions({
+          displayName: 'users',
+          ...btq.generateActions(['updateUser'])
+        })
+
+    actions.updateUser.should.contain.keys(['success', 'failure'])
+
+    actions.updateUser.success('hello')
+    spy.should.have.been.calledWithExactly('users_updateUser__success', 'hello')
+
+    actions.updateUser.failure('hello')
+    spy.should.have.been.calledWithExactly('users_updateUser__failure', 'hello')
+  })
+
+
+  it('should create async responses in actions', done => {
+    var spy = sinon.spy(btq, 'dispatch')
+      , actions = btq.createActions({ 
+          displayName: 'users',
+          updateUser(data){ 
+            this.success.should.be.a('function')
+            this.failure.should.be.a('function')
+            
+            this.success('hello')
+            spy.should.have.been.calledWithExactly('users_updateUser__success', 'hello')
+
+            this.failure('hello')
+            spy.should.have.been.calledWithExactly('users_updateUser__failure', 'hello')
+
+            done()
+          }
+        })
+
+      actions.updateUser()
+  })
 })

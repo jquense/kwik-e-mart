@@ -1,16 +1,9 @@
 var webpack = require('webpack');
-var pkg = require('./package.json')
-var config = pkg.babel
 
 var loaders = [
       { test: /\.css$/,  loader: "style-loader!css-loader" },
       { test: /\.less$/, loader: "style-loader!css-loader!less-loader" },
-      { 
-        test: /\.jsx$|\.js$/, 
-        loader: 'babel-loader', 
-        exclude: /node_modules/,
-        query: config
-      }
+      { test: /\.jsx$|\.js$/, loader: 'babel-loader', exclude: /node_modules/ }
     ];
 
 
